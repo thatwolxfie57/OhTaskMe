@@ -1,0 +1,718 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Calendar - {{ month_name }} {{ year }}{% endblock %}
+{% block calendar_active %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calendar-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .calendar-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+    }
+
+    .calendar-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .calendar-nav .btn {
+        border-radius: 25px;
+        padding: 0.5rem 1rem;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        transition: all 0.3s ease;
+    }
+
+    .calendar-nav .btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.4);
+        color: white;
+    }
+
+    .view-controls {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .view-btn {
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .view-btn.active {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .view-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        text-decoration: none;
+    }
+
+    .calendar-filters {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filter-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+    }
+
+    .filter-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .filter-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 255, 255, 0.3);
+        transition: .4s;
+        border-radius: 24px;
+    }
+
+    .filter-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .filter-slider {
+        background-color: rgba(255, 255, 255, 0.5);
+    }
+
+    input:checked + .filter-slider:before {
+        transform: translateX(26px);
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background-color: #e0e0e0;
+        margin: 1rem;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .calendar-cell {
+        background-color: white;
+        min-height: 120px;
+        padding: 8px;
+        position: relative;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .calendar-cell:hover {
+        background-color: #f8f9fa;
+    }
+
+    .calendar-cell.other-month {
+        background-color: #f5f5f5;
+        color: #999;
+    }
+
+    .calendar-cell.today {
+        background-color: #e3f2fd;
+        border: 2px solid #2196f3;
+    }
+
+    .calendar-cell.has-items {
+        background-color: #f0f8ff;
+    }
+
+    .day-number {
+        font-weight: bold;
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+
+    .calendar-item {
+        font-size: 11px;
+        padding: 2px 4px;
+        border-radius: 3px;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .calendar-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .calendar-task {
+        background-color: #e3f2fd;
+        border-left: 3px solid #2196f3;
+        color: #1976d2;
+    }
+
+    .calendar-task-completed {
+        background-color: #e8f5e8;
+        border-left: 3px solid #4caf50;
+        color: #388e3c;
+        text-decoration: line-through;
+        opacity: 0.7;
+    }
+
+    .calendar-event {
+        background-color: #fff3e0;
+        border-left: 3px solid #ff9800;
+        color: #f57c00;
+    }
+
+    .calendar-event-active {
+        background-color: #fff8e1;
+        border-left: 3px solid #ffc107;
+        color: #f57c00;
+        font-weight: bold;
+    }
+
+    .week-view, .day-view {
+        padding: 1rem;
+    }
+
+    .week-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .week-day {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 1rem;
+        min-height: 200px;
+        background: white;
+    }
+
+    .week-day-header {
+        font-weight: bold;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e0e0e0;
+        margin-bottom: 0.5rem;
+    }
+
+    .day-detail {
+        padding: 2rem;
+        background: white;
+        border-radius: 8px;
+        margin: 1rem;
+    }
+
+    .items-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .items-list li {
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 6px;
+        border-left: 4px solid;
+        background: #f8f9fa;
+    }
+
+    .items-list .task-item {
+        border-left-color: #2196f3;
+    }
+
+    .items-list .event-item {
+        border-left-color: #ff9800;
+    }
+
+    .items-list .task-completed {
+        border-left-color: #4caf50;
+        opacity: 0.7;
+        text-decoration: line-through;
+    }
+
+    .quick-add-btn {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        font-size: 24px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
+
+    .quick-add-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    }
+
+    .calendar-legend {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .legend-color {
+        width: 20px;
+        height: 12px;
+        border-radius: 2px;
+    }
+
+    .no-items {
+        text-align: center;
+        color: #6c757d;
+        font-style: italic;
+        padding: 2rem;
+    }
+
+    @media (max-width: 768px) {
+        .calendar-nav {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .calendar-filters {
+            justify-content: center;
+        }
+
+        .calendar-grid {
+            margin: 0.5rem;
+        }
+
+        .calendar-cell {
+            min-height: 80px;
+            padding: 4px;
+        }
+
+        .week-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="calendar-container">
+        <!-- Calendar Header -->
+        <div class="calendar-header">
+            <div class="calendar-nav">
+                <div class="d-flex align-items-center">
+                    <a href="?view={{ view_type }}&year={{ nav_prev.year }}&month={{ nav_prev.month }}&day={{ nav_prev.day }}&show_tasks={{ show_tasks|yesno:'true,false' }}&show_events={{ show_events|yesno:'true,false' }}&show_completed={{ show_completed|yesno:'true,false' }}" 
+                       class="btn me-3">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                    
+                    <h2 class="mb-0">
+                        {% if view_type == 'month' %}
+                            {{ month_name }} {{ year }}
+                        {% elif view_type == 'week' %}
+                            Week of {{ start_date|date:"M d" }} - {{ end_date|date:"M d, Y" }}
+                        {% else %}
+                            {{ current_date|date:"F d, Y" }}
+                        {% endif %}
+                    </h2>
+                    
+                    <a href="?view={{ view_type }}&year={{ nav_next.year }}&month={{ nav_next.month }}&day={{ nav_next.day }}&show_tasks={{ show_tasks|yesno:'true,false' }}&show_events={{ show_events|yesno:'true,false' }}&show_completed={{ show_completed|yesno:'true,false' }}" 
+                       class="btn ms-3">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </div>
+                
+                <div class="d-flex align-items-center gap-3">
+                    <a href="?view={{ view_type }}&year={{ today.year }}&month={{ today.month }}&day={{ today.day }}&show_tasks={{ show_tasks|yesno:'true,false' }}&show_events={{ show_events|yesno:'true,false' }}&show_completed={{ show_completed|yesno:'true,false' }}" 
+                       class="btn">Today</a>
+                    
+                    <div class="view-controls">
+                        <a href="?view=month&year={{ year }}&month={{ month }}&day={{ day }}&show_tasks={{ show_tasks|yesno:'true,false' }}&show_events={{ show_events|yesno:'true,false' }}&show_completed={{ show_completed|yesno:'true,false' }}" 
+                           class="view-btn {% if view_type == 'month' %}active{% endif %}">Month</a>
+                        <a href="?view=week&year={{ year }}&month={{ month }}&day={{ day }}&show_tasks={{ show_tasks|yesno:'true,false' }}&show_events={{ show_events|yesno:'true,false' }}&show_completed={{ show_completed|yesno:'true,false' }}" 
+                           class="view-btn {% if view_type == 'week' %}active{% endif %}">Week</a>
+                        <a href="?view=day&year={{ year }}&month={{ month }}&day={{ day }}&show_tasks={{ show_tasks|yesno:'true,false' }}&show_events={{ show_events|yesno:'true,false' }}&show_completed={{ show_completed|yesno:'true,false' }}" 
+                           class="view-btn {% if view_type == 'day' %}active{% endif %}">Day</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="calendar-filters">
+                <div class="filter-group">
+                    <label class="filter-switch">
+                        <input type="checkbox" id="show_tasks" {% if show_tasks %}checked{% endif %}>
+                        <span class="filter-slider"></span>
+                    </label>
+                    <label for="show_tasks">Show Tasks</label>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-switch">
+                        <input type="checkbox" id="show_events" {% if show_events %}checked{% endif %}>
+                        <span class="filter-slider"></span>
+                    </label>
+                    <label for="show_events">Show Events</label>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-switch">
+                        <input type="checkbox" id="show_completed" {% if show_completed %}checked{% endif %}>
+                        <span class="filter-slider"></span>
+                    </label>
+                    <label for="show_completed">Show Completed</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar Content -->
+        {% if view_type == 'month' %}
+            <!-- Month View -->
+            <div class="calendar-grid">
+                <!-- Weekday Headers -->
+                {% for weekday in weekday_names %}
+                    <div class="calendar-cell" style="min-height: 40px; background: #f8f9fa; font-weight: bold; display: flex; align-items: center; justify-content: center;">
+                        {{ weekday }}
+                    </div>
+                {% endfor %}
+                
+                <!-- Calendar Days -->
+                {% for week in month_days %}
+                    {% for day in week %}
+                        {% if day == 0 %}
+                            <div class="calendar-cell other-month"></div>
+                        {% else %}
+                            <div class="calendar-cell {% if day == today.day and month == today.month and year == today.year %}today{% endif %}" 
+                                 data-date="{{ year }}-{{ month|stringformat:"02d" }}-{{ day|stringformat:"02d" }}">
+                                <div class="day-number">{{ day }}</div>
+                                
+                                {% for item in calendar_items %}
+                                    {% if item.date.day == day and item.date.month == month and item.date.year == year %}
+                                        <div class="calendar-item {{ item.css_class }}" 
+                                             title="{{ item.title }} - {{ item.time|time:"g:i A" }}"
+                                             onclick="viewItem('{{ item.type }}', {{ item.id }})">
+                                            <i class="fas {% if item.type == 'task' %}fa-check-square{% else %}fa-calendar{% endif %} me-1"></i>
+                                            {{ item.title|truncatechars:20 }}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </div>
+            
+        {% elif view_type == 'week' %}
+            <!-- Week View -->
+            <div class="week-view">
+                <div class="week-grid">
+                    {% for day in week_days %}
+                        <div class="week-day {% if day == today %}today{% endif %}">
+                            <div class="week-day-header">
+                                {{ day|date:"l" }}<br>
+                                <small>{{ day|date:"M d" }}</small>
+                            </div>
+                            
+                            {% for item in calendar_items %}
+                                {% if item.date == day %}
+                                    <div class="calendar-item {{ item.css_class }}" 
+                                         onclick="viewItem('{{ item.type }}', {{ item.id }})">
+                                        <strong>{{ item.time|time:"g:i A" }}</strong><br>
+                                        {{ item.title }}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+        {% else %}
+            <!-- Day View -->
+            <div class="day-detail">
+                <h3>{{ current_date|date:"l, F d, Y" }}</h3>
+                
+                {% if calendar_items %}
+                    <ul class="items-list">
+                        {% for item in calendar_items %}
+                            {% if item.date == current_date %}
+                                <li class="{% if item.type == 'task' %}task-item{% else %}event-item{% endif %} {% if item.completed %}task-completed{% endif %}"
+                                    onclick="viewItem('{{ item.type }}', {{ item.id }})">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong>{{ item.time|time:"g:i A" }}</strong> - {{ item.title }}
+                                            {% if item.description %}
+                                                <br><small class="text-muted">{{ item.description }}</small>
+                                            {% endif %}
+                                            {% if item.location %}
+                                                <br><small class="text-muted"><i class="fas fa-map-marker-alt"></i> {{ item.location }}</small>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-{{ item.color }}">
+                                                {% if item.type == 'task' %}Task{% else %}Event{% endif %}
+                                                {% if item.is_active %} (Active){% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="no-items">
+                        <i class="fas fa-calendar-times fa-3x mb-3 text-muted"></i>
+                        <p>No tasks or events scheduled for this day.</p>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <!-- Calendar Legend -->
+        <div class="calendar-legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #e3f2fd; border-left: 3px solid #2196f3;"></div>
+                <span>Tasks</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #e8f5e8; border-left: 3px solid #4caf50;"></div>
+                <span>Completed Tasks</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #fff3e0; border-left: 3px solid #ff9800;"></div>
+                <span>Events</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #fff8e1; border-left: 3px solid #ffc107;"></div>
+                <span>Active Events</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Add Button -->
+    <button class="quick-add-btn" onclick="showQuickAddModal()" title="Quick Add">
+        <i class="fas fa-plus"></i>
+    </button>
+</div>
+
+<!-- Quick Add Modal -->
+<div class="modal fade" id="quickAddModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quick Add</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Type</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="quick_type" id="quick_task" value="task" checked>
+                        <label class="btn btn-outline-primary" for="quick_task">Task</label>
+                        
+                        <input type="radio" class="btn-check" name="quick_type" id="quick_event" value="event">
+                        <label class="btn btn-outline-primary" for="quick_event">Event</label>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="quick_title" class="form-label">Title</label>
+                    <input type="text" class="form-control" id="quick_title" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="quick_date" class="form-label">Date</label>
+                    <input type="date" class="form-control" id="quick_date" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="quick_time" class="form-label">Time</label>
+                    <input type="time" class="form-control" id="quick_time" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitQuickAdd()">Create</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Filter handling
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set up filter change handlers
+        ['show_tasks', 'show_events', 'show_completed'].forEach(function(filterId) {
+            document.getElementById(filterId).addEventListener('change', function() {
+                updateFilters();
+            });
+        });
+        
+        // Set today as default for quick add
+        const today = new Date();
+        document.getElementById('quick_date').value = today.toISOString().split('T')[0];
+        document.getElementById('quick_time').value = '09:00';
+    });
+
+    function updateFilters() {
+        const showTasks = document.getElementById('show_tasks').checked;
+        const showEvents = document.getElementById('show_events').checked;
+        const showCompleted = document.getElementById('show_completed').checked;
+        
+        const url = new URL(window.location);
+        url.searchParams.set('show_tasks', showTasks);
+        url.searchParams.set('show_events', showEvents);
+        url.searchParams.set('show_completed', showCompleted);
+        
+        window.location.href = url.toString();
+    }
+
+    function viewItem(type, id) {
+        if (type === 'task') {
+            window.location.href = `/tasks/${id}/`;
+        } else if (type === 'event') {
+            window.location.href = `/events/${id}/`;
+        }
+    }
+
+    function showQuickAddModal() {
+        const modal = new bootstrap.Modal(document.getElementById('quickAddModal'));
+        modal.show();
+    }
+
+    function submitQuickAdd() {
+        const type = document.querySelector('input[name="quick_type"]:checked').value;
+        const title = document.getElementById('quick_title').value;
+        const date = document.getElementById('quick_date').value;
+        const time = document.getElementById('quick_time').value;
+        
+        if (!title || !date || !time) {
+            alert('Please fill in all fields');
+            return;
+        }
+        
+        const datetime = `${date}T${time}`;
+        
+        if (type === 'task') {
+            window.location.href = `/tasks/create/?title=${encodeURIComponent(title)}&scheduled_time=${datetime}`;
+        } else {
+            window.location.href = `/events/create/?title=${encodeURIComponent(title)}&start_time=${datetime}`;
+        }
+    }
+
+    // Calendar cell click handling
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.calendar-cell[data-date]').forEach(function(cell) {
+            cell.addEventListener('dblclick', function() {
+                const date = this.dataset.date;
+                showQuickAddModal();
+                document.getElementById('quick_date').value = date;
+            });
+        });
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+            switch(e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    document.querySelector('.calendar-nav a[href*="nav_prev"]').click();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    document.querySelector('.calendar-nav a[href*="nav_next"]').click();
+                    break;
+                case 't':
+                    e.preventDefault();
+                    document.querySelector('.calendar-nav a[href*="today"]').click();
+                    break;
+                case 'n':
+                    e.preventDefault();
+                    showQuickAddModal();
+                    break;
+            }
+        }
+        
+        // View switching
+        if (!e.ctrlKey && !e.metaKey) {
+            switch(e.key) {
+                case 'm':
+                case 'M':
+                    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                        document.querySelector('.view-btn[href*="view=month"]').click();
+                    }
+                    break;
+                case 'w':
+                case 'W':
+                    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                        document.querySelector('.view-btn[href*="view=week"]').click();
+                    }
+                    break;
+                case 'd':
+                case 'D':
+                    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                        document.querySelector('.view-btn[href*="view=day"]').click();
+                    }
+                    break;
+            }
+        }
+    });
+</script>
+{% endblock %}

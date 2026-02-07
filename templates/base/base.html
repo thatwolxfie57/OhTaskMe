@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}OhTaskMe - Task Management{% endblock %}</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAACVQTFRF////2196fH19n5+f1dXVpaWl6urqzMzM4+Pjurq6hYWF8fHx////A8RJ8wAAAAt0Uk5TAP///////////wBhSUmgAAAA9klEQVQ4y42TMRaCMBBFX0JCgAQSCxsLG1t7e3t7e3ube3t7e3sLCxtbSyws7O0tbCwsLCwsLCws/4cZM2ZmzMyb/2cm/yf5J5n8k8z/yf5J9k8y+SeZ/JPMn2T+T/ZPsn+S/ZPsn2T/JPsn2T/J/kn2T7J/kv2T7J9k/yT7J9k/yf5J9k+yf5L9k+yf5P9k8k8y+SeZ/JPM/8nmT7J/kv2T7J9k/yT7J9k/yf5J9k+yf5L9k+yf5P9k8k8y+SeZ/JPM/8n+SfZPsn+S/ZPsn2T/JPsn2T/J/kn2T7J/kv2T7J9k/yT7J9k/yf5J9k+yf5L9k+yf5P8==" />
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Flatpickr for date/time pickers -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <!-- Custom CSS -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/enhancements.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Header -->
+    <header class="site-header">
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container">
+                <a class="navbar-brand" href="{% url 'home' %}">
+                    <i class="fas fa-tasks me-2"></i>OhTaskMe
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        {% if user.is_authenticated %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" 
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-user-circle me-1"></i>{{ user.username }}
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li><a class="dropdown-item" href="{% url 'profile' %}">
+                                        <i class="fas fa-id-card me-2"></i>Profile
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'password_change' %}">
+                                        <i class="fas fa-key me-2"></i>Change Password
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{% url 'logout' %}">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                    </a></li>
+                                </ul>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'login' %}">
+                                    <i class="fas fa-sign-in-alt me-1"></i>Login
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'register' %}">
+                                    <i class="fas fa-user-plus me-1"></i>Register
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <div class="container-fluid py-4">
+        <div class="row">
+            {% if user.is_authenticated %}
+                <!-- Sidebar -->
+                <div class="col-md-3 col-lg-2">
+                    <div class="sidebar rounded">
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link {% block dashboard_active %}{% endblock %}" href="{% url 'dashboard' %}">
+                                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                </a>
+                            </li>
+                            <!-- Task URLs implemented in Step 12 -->
+                            <li class="nav-item">
+                                <a class="nav-link {% block tasks_active %}{% endblock %}" href="{% url 'task_list' %}">
+                                    <i class="fas fa-tasks me-2"></i>Tasks
+                                </a>
+                            </li>
+                            <!-- Event URLs implemented in Step 13 -->
+                            <li class="nav-item">
+                                <a class="nav-link {% block events_active %}{% endblock %}" href="{% url 'event_list' %}">
+                                    <i class="fas fa-calendar me-2"></i>Events
+                                </a>
+                            </li>
+                            <!-- Additional URLs for future implementation -->
+                            <li class="nav-item">
+                                <a class="nav-link {% block calendar_active %}{% endblock %}" href="{% url 'integrated_calendar' %}">
+                                    <i class="fas fa-calendar-alt me-2"></i>Calendar
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% block statistics_active %}{% endblock %}" href="{% url 'stats:dashboard' %}">
+                                    <i class="fas fa-chart-bar me-2"></i>Statistics
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- Main Content -->
+                <div class="col-md-9 col-lg-10">
+            {% else %}
+                <!-- Full width for non-authenticated users -->
+                <div class="col-12">
+            {% endif %}
+                
+                <!-- Messages/Alerts -->
+                {% if messages %}
+                    <div class="messages mb-4">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <!-- Page Content -->
+                <div class="content-area">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>OhTaskMe</h5>
+                    <p class="text-muted">Simplify your task management and event planning.</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'home' %}" class="text-light">Home</a></li>
+                        <li><a href="{% url 'about' %}" class="text-light">About</a></li>
+                        <li><a href="{% url 'privacy' %}" class="text-light">Privacy Policy</a></li>
+                        <li><a href="{% url 'terms' %}" class="text-light">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Contact</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-envelope me-2"></i>support@ohtaskme.com</li>
+                        <li><i class="fas fa-phone me-2"></i>(123) 456-7890</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12 text-center">
+                    <p class="mb-0">&copy; {% now "Y" %} OhTaskMe. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- Custom JS Modules -->
+    <script src="{% static 'js/form-validation.js' %}"></script>
+    <script src="{% static 'js/ajax-manager.js' %}"></script>
+    <script src="{% static 'js/datetime-picker.js' %}"></script>
+    <script src="{% static 'js/dynamic-ui.js' %}"></script>
+    <script src="{% static 'js/calendar-enhancements.js' %}?v=1.2"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

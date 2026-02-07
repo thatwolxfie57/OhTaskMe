@@ -1,0 +1,106 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Simple Stats{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Statistics Dashboard (No Charts)</h1>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5>Total XP</h5>
+                    <h2>{{ user_stats.total_xp|default:0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5>Current Level</h5>
+                    <h2>{{ user_stats.current_level|default:1 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5>Completed Tasks</h5>
+                    <h2>{{ weekly_tasks|default:0 }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Productivity Trends (Text)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="productivity-bars">
+                        {% for day in chart_data.daily_productivity %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>{{ day.date }}</span>
+                            <div class="progress" style="width: 60%;">
+                                <div class="progress-bar" style="width: {{ day.score }}%">
+                                    {{ day.score }}%
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p>No productivity data available</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>XP Progress (Text)</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Current XP:</strong> {{ user_stats.total_xp|default:0 }}</p>
+                    <p><strong>Current Level:</strong> {{ user_stats.current_level|default:1 }}</p>
+                    <p><strong>Next Level XP:</strong> {{ user_stats.current_level|default:1|add:1|mul:100 }}</p>
+                    
+                    <div class="progress">
+                        <div class="progress-bar" style="width: {% widthratio user_stats.total_xp|default:0 user_stats.current_level|default:1|add:1|mul:100 100 %}%">
+                            {{ user_stats.total_xp|default:0 }} XP
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Debug Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Chart Data:</strong></p>
+                    <pre>{{ chart_data|safe }}</pre>
+                    <p><strong>User Stats:</strong></p>
+                    <pre>Total XP: {{ user_stats.total_xp|default:"None" }}
+Level: {{ user_stats.current_level|default:"None" }}
+Weekly Tasks: {{ weekly_tasks|default:"None" }}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+console.log("Simple stats page loaded");
+console.log("Chart data:", {{ chart_data|safe }});
+</script>
+{% endblock %}

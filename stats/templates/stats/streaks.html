@@ -1,0 +1,487 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Streaks Tracking - OhTaskMe{% endblock %}
+{% block stats_active %}active{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3"><i class="fas fa-fire me-2 text-danger"></i>Streaks Tracking</h1>
+                <p class="lead">Build habits, maintain momentum, and unlock achievements!</p>
+            </div>
+            <div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newStreakModal">
+                    <i class="fas fa-plus me-2"></i>Create New Streak
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Streak Statistics Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-primary">{{ active_streaks.count }}</h3>
+                <small class="text-muted">Active Streaks</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-success">{% for streak in active_streaks %}{% if forloop.first %}{{ streak.current_count }}{% endif %}{% empty %}0{% endfor %}</h3>
+                <small class="text-muted">Longest Current</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-warning">{% for streak in active_streaks %}{% if streak.best_count > 0 and forloop.first %}{{ streak.best_count }}{% endif %}{% empty %}0{% endfor %}</h3>
+                <small class="text-muted">Personal Best</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-info">{{ inactive_streaks.count }}</h3>
+                <small class="text-muted">Completed/Paused</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Streaks -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%); color: white;">
+                <h4 class="mb-0">
+                    <i class="fas fa-fire me-2"></i>Active Streaks
+                    <span class="badge bg-light text-dark ms-2">{{ active_streaks.count }}</span>
+                </h4>
+            </div>
+            <div class="card-body">
+                {% if active_streaks %}
+                    <div class="row">
+                        {% for streak in active_streaks %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card streak-card h-100 border-2 {% if streak.current_count >= 7 %}border-success{% elif streak.current_count >= 3 %}border-warning{% else %}border-primary{% endif %}">
+                                    <div class="card-body text-center position-relative">
+                                        <!-- Streak Type Icon -->
+                                        <div class="streak-icon mb-3">
+                                            {% if streak.streak_type == 'daily_tasks' %}
+                                                <i class="fas fa-calendar-check fa-3x text-success"></i>
+                                            {% elif streak.streak_type == 'weekly_goals' %}
+                                                <i class="fas fa-trophy fa-3x text-warning"></i>
+                                            {% elif streak.streak_type == 'perfect_days' %}
+                                                <i class="fas fa-star fa-3x text-primary"></i>
+                                            {% elif streak.streak_type == 'habit_21day' %}
+                                                <i class="fas fa-seedling fa-3x text-success"></i>
+                                            {% elif streak.streak_type == 'early_completions' %}
+                                                <i class="fas fa-rocket fa-3x text-info"></i>
+                                            {% elif streak.streak_type == 'monthly_targets' %}
+                                                <i class="fas fa-calendar-alt fa-3x text-secondary"></i>
+                                            {% else %}
+                                                <i class="fas fa-fire fa-3x text-danger"></i>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- Hot Streak Badge -->
+                                        {% if streak.current_count >= 7 %}
+                                            <div class="position-absolute top-0 end-0 p-2">
+                                                <span class="badge bg-danger">🔥 Hot!</span>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <h5 class="card-title">{{ streak.streak_name }}</h5>
+                                        <small class="text-muted d-block mb-2">{{ streak.get_streak_type_display }}</small>
+                                        
+                                        <!-- Current Count Display -->
+                                        <div class="streak-count mb-3">
+                                            <span class="display-3 fw-bold {% if streak.current_count >= 7 %}text-success{% elif streak.current_count >= 3 %}text-warning{% else %}text-primary{% endif %}">{{ streak.current_count }}</span>
+                                            <div class="small text-muted">Days Strong</div>
+                                        </div>
+                                        
+                                        <!-- Progress & Stats -->
+                                        <div class="streak-details mb-3">
+                                            <div class="row text-center">
+                                                <div class="col-6">
+                                                    <div class="border-end">
+                                                        <strong class="text-success">{{ streak.best_count }}</strong>
+                                                        <div class="small text-muted">Personal Best</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <strong class="text-info">{{ streak.last_updated|timesince }}</strong>
+                                                    <div class="small text-muted">Last Update</div>
+                                                </div>
+                                            </div>
+                                            
+                                            {% if streak.target_count %}
+                                                <div class="mt-3">
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <span class="small">Target: {{ streak.target_count }}</span>
+                                                        <span class="small">{% widthratio streak.current_count streak.target_count 100 %}%</span>
+                                                    </div>
+                                                    <div class="progress" style="height: 8px;">
+                                                        {% widthratio streak.current_count streak.target_count 100 as progress_width %}
+                                                        <div class="progress-bar {% if progress_width >= 100 %}bg-success{% elif progress_width >= 75 %}bg-warning{% else %}bg-primary{% endif %}" style="width: {{ progress_width }}%"></div>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        {% if streak.description %}
+                                            <p class="card-text small text-muted mb-3">{{ streak.description|truncatechars:80 }}</p>
+                                        {% endif %}
+                                        
+                                        <!-- Action Buttons -->
+                                        <div class="streak-actions">
+                                            <button class="btn btn-sm btn-success me-2" onclick="incrementStreak({{ streak.id }})" title="Mark today as completed">
+                                                <i class="fas fa-plus"></i> +1 Day
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-warning" onclick="pauseStreak({{ streak.id }})" title="Pause this streak">
+                                                <i class="fas fa-pause"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer text-muted small text-center bg-light">
+                                        <i class="fas fa-calendar-day me-1"></i>
+                                        Last updated: {{ streak.last_updated|date:"M d, Y" }}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-fire fa-4x text-muted mb-4"></i>
+                        <h4 class="text-muted">No Active Streaks</h4>
+                        <p class="text-muted mb-4">Start tracking your habits and build momentum!<br>
+                        <small>Consistent daily actions lead to extraordinary results.</small></p>
+                        <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#newStreakModal">
+                            <i class="fas fa-plus me-2"></i>Create Your First Streak
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Inactive/Completed Streaks -->
+{% if inactive_streaks %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-history me-2"></i>Inactive Streaks
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for streak in inactive_streaks %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card streak-card h-100 opacity-75">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">{{ streak.streak_name }}</h6>
+                                    <div class="streak-count mb-2">
+                                        <span class="h5 text-muted">{{ streak.best_count }}</span>
+                                        <div class="small text-muted">Best Streak</div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="reactivateStreak({{ streak.id }})">
+                                        <i class="fas fa-redo"></i> Reactivate
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- New Streak Modal -->
+<div class="modal fade" id="newStreakModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Streak</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="newStreakForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="streakName" class="form-label">Streak Name</label>
+                        <input type="text" class="form-control" id="streakName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="streakType" class="form-label">Streak Type</label>
+                        <select class="form-select" id="streakType" required>
+                            {% for value, label in streak_types %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="targetCount" class="form-label">Target Count (optional)</label>
+                        <input type="number" class="form-control" id="targetCount" min="1">
+                        <div class="form-text">Set a target to track progress</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Streak</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.streak-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.streak-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.streak-card.border-success {
+    border-left-color: #28a745;
+    box-shadow: 0 2px 10px rgba(40, 167, 69, 0.2);
+}
+
+.streak-card.border-warning {
+    border-left-color: #ffc107;
+    box-shadow: 0 2px 10px rgba(255, 193, 7, 0.2);
+}
+
+.streak-card.border-primary {
+    border-left-color: #007bff;
+    box-shadow: 0 2px 10px rgba(0, 123, 255, 0.2);
+}
+
+.streak-icon {
+    opacity: 0.9;
+    transition: transform 0.3s ease;
+}
+
+.streak-card:hover .streak-icon {
+    transform: scale(1.1);
+}
+
+.progress {
+    height: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.streak-actions .btn {
+    min-width: 70px;
+    transition: all 0.2s ease;
+}
+
+.streak-actions .btn:hover {
+    transform: scale(1.05);
+}
+
+.bg-gradient {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%) !important;
+}
+
+.display-3 {
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.streak-counter {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.card.text-center {
+    border: none;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    transition: transform 0.2s ease;
+}
+
+.card.text-center:hover {
+    transform: translateY(-2px);
+}
+
+.badge.bg-danger {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.position-absolute .badge {
+    font-size: 0.7rem;
+}
+
+.border-end {
+    border-right: 1px solid #dee2e6 !important;
+}
+
+.empty-state {
+    padding: 4rem 2rem;
+}
+
+.btn-lg i {
+    font-size: 1.2rem;
+}
+
+/* Milestone indicators */
+.milestone-indicator {
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(45deg, #ffd700, #ffed4e);
+    color: #333;
+    border-radius: 15px;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function incrementStreak(streakId) {
+    fetch(`/stats/streaks/${streakId}/increment/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Failed to increment streak');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to increment streak');
+    });
+}
+
+function pauseStreak(streakId) {
+    if (confirm('Are you sure you want to pause this streak?')) {
+        fetch(`/stats/streaks/${streakId}/pause/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Failed to pause streak');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to pause streak');
+        });
+    }
+}
+
+function reactivateStreak(streakId) {
+    fetch(`/stats/streaks/${streakId}/reactivate/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Failed to reactivate streak');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to reactivate streak');
+    });
+}
+
+// Handle new streak form submission
+document.getElementById('newStreakForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        streak_name: document.getElementById('streakName').value,
+        streak_type: document.getElementById('streakType').value,
+        description: document.getElementById('description').value,
+        target_count: document.getElementById('targetCount').value || null
+    };
+    
+    fetch('/stats/streaks/create/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Failed to create streak: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to create streak');
+    });
+});
+</script>
+{% endblock %}

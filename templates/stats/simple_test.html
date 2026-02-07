@@ -1,0 +1,25 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Simple Test{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Simple Test Page</h1>
+    <div id="status">JavaScript not loaded</div>
+    <button id="testBtn" class="btn btn-primary">Click me</button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("JavaScript is working!");
+    document.getElementById('status').textContent = 'JavaScript is working!';
+    document.getElementById('status').style.color = 'green';
+    
+    document.getElementById('testBtn').addEventListener('click', function() {
+        alert('Button clicked! JavaScript is definitely working.');
+    });
+});
+</script>
+{% endblock %}

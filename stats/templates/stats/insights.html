@@ -1,0 +1,375 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Productivity Insights - OhTaskMe{% endblock %}
+
+{% block extra_css %}
+<style>
+    .insight-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .insight-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .insight-card.priority-high {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    }
+    
+    .insight-card.priority-medium {
+        background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);
+        color: #333;
+    }
+    
+    .insight-card.priority-low {
+        background: linear-gradient(135deg, #48dbfb 0%, #0abde3 100%);
+    }
+    
+    .insight-card.read {
+        opacity: 0.7;
+        background: linear-gradient(135deg, #a8a8a8 0%, #8e8e8e 100%);
+    }
+    
+    .insight-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .insight-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .insight-meta {
+        font-size: 0.9rem;
+        opacity: 0.8;
+        margin-bottom: 1rem;
+    }
+    
+    .insight-content {
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+    
+    .insight-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .insight-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .badge-high {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+    
+    .badge-medium {
+        background: rgba(0, 0, 0, 0.1);
+        color: #333;
+    }
+    
+    .badge-low {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+    
+    .no-insights {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+    
+    .stats-summary {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .generate-insights-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: transform 0.3s ease;
+    }
+    
+    .generate-insights-btn:hover {
+        transform: translateY(-2px);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>
+                        Productivity Insights
+                    </h1>
+                    <p class="text-muted mb-0">AI-powered recommendations to boost your productivity</p>
+                </div>
+                <button class="btn generate-insights-btn" onclick="generateNewInsights()">
+                    <i class="fas fa-magic me-2"></i>
+                    Generate New Insights
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Insights Summary -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stats-summary">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3 class="text-primary mb-1">{{ insights.count }}</h3>
+                            <small class="text-muted">Total Insights</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3 class="text-warning mb-1">{{ unread_count }}</h3>
+                            <small class="text-muted">Unread</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3 class="text-success mb-1">{{ insights|length|add:"-1"|add:unread_count }}</h3>
+                            <small class="text-muted">Implemented</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3 class="text-info mb-1">85%</h3>
+                            <small class="text-muted">Success Rate</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Insights List -->
+    <div class="row">
+        <div class="col-12">
+            {% if insights %}
+                {% for insight in insights %}
+                <div class="insight-card {% if insight.priority == 'high' %}priority-high{% elif insight.priority == 'medium' %}priority-medium{% else %}priority-low{% endif %} {% if insight.is_read %}read{% endif %}" 
+                     data-insight-id="{{ insight.id }}">
+                    <div class="insight-header">
+                        <h3 class="insight-title">
+                            <i class="fas fa-{% if insight.insight_type == 'schedule' %}calendar-alt{% elif insight.insight_type == 'focus' %}eye{% elif insight.insight_type == 'habit' %}sync{% elif insight.insight_type == 'break' %}coffee{% else %}chart-line{% endif %} me-2"></i>
+                            {{ insight.title }}
+                        </h3>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="insight-badge badge-{{ insight.priority }}">
+                                {{ insight.get_priority_display|upper }}
+                            </span>
+                            {% if not insight.is_read %}
+                                <span class="badge bg-warning">NEW</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="insight-meta">
+                        <i class="fas fa-clock me-1"></i>
+                        {{ insight.created_at|timesince }} ago
+                        •
+                        <i class="fas fa-tag me-1"></i>
+                        {{ insight.get_insight_type_display }}
+                    </div>
+                    
+                    <div class="insight-content">
+                        {{ insight.message }}
+                        
+                        {% if insight.action_description and insight.action_taken %}
+                        <div class="mt-2">
+                            <strong>Action Taken:</strong> {{ insight.action_description }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="insight-actions">
+                        {% if not insight.is_read %}
+                            <button class="btn btn-light btn-sm" onclick="markAsRead({{ insight.id }})">
+                                <i class="fas fa-check me-1"></i>Mark as Read
+                            </button>
+                        {% endif %}
+                        
+                        {% if not insight.action_taken %}
+                            <button class="btn btn-success btn-sm" onclick="takeAction({{ insight.id }})">
+                                <i class="fas fa-play me-1"></i>Take Action
+                            </button>
+                        {% else %}
+                            <span class="btn btn-success btn-sm disabled">
+                                <i class="fas fa-check me-1"></i>Action Taken
+                            </span>
+                        {% endif %}
+                        
+                        {% if not insight.is_dismissed %}
+                            <button class="btn btn-outline-light btn-sm" onclick="dismissInsight({{ insight.id }})">
+                                <i class="fas fa-times me-1"></i>Dismiss
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-insights">
+                    <i class="fas fa-lightbulb fa-4x text-muted mb-3"></i>
+                    <h3>No Insights Available</h3>
+                    <p class="lead">Start using OhTaskMe to generate personalized productivity insights!</p>
+                    <button class="btn generate-insights-btn" onclick="generateSampleInsights()">
+                        <i class="fas fa-magic me-2"></i>
+                        Generate Sample Insights
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Action Modal -->
+<div class="modal fade" id="actionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Take Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="actionForm">
+                    <input type="hidden" id="actionInsightId" name="insight_id">
+                    <div class="mb-3">
+                        <label for="actionDescription" class="form-label">Describe the action you took:</label>
+                        <textarea class="form-control" id="actionDescription" name="action_description" rows="3" 
+                                  placeholder="What did you do to implement this insight?"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="submitAction()">Save Action</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function markAsRead(insightId) {
+    fetch('{% url "stats:insights" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: `insight_id=${insightId}&action=mark_read`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to mark insight as read. Please try again.');
+    });
+}
+
+function takeAction(insightId) {
+    document.getElementById('actionInsightId').value = insightId;
+    const modal = new bootstrap.Modal(document.getElementById('actionModal'));
+    modal.show();
+}
+
+function submitAction() {
+    const form = document.getElementById('actionForm');
+    const formData = new FormData(form);
+    formData.append('action', 'take_action');
+    
+    fetch('{% url "stats:insights" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('actionModal'));
+            modal.hide();
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to save action. Please try again.');
+    });
+}
+
+function dismissInsight(insightId) {
+    if (confirm('Are you sure you want to dismiss this insight?')) {
+        fetch('{% url "stats:insights" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `insight_id=${insightId}&action=dismiss`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to dismiss insight. Please try again.');
+        });
+    }
+}
+
+function generateNewInsights() {
+    alert('AI insight generation feature coming soon!');
+}
+
+function generateSampleInsights() {
+    // For demonstration, we'll create some sample insights
+    alert('Generating sample insights... This would integrate with your productivity AI system.');
+}
+</script>
+
+<!-- CSRF Token for AJAX requests -->
+{% csrf_token %}
+{% endblock %}

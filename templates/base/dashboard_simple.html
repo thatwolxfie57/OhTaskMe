@@ -1,0 +1,188 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Dashboard - OhTaskMe{% endblock %}
+{% block dashboard_active %}active{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h3">Dashboard</h1>
+        <p class="lead">Welcome back, {{ user.first_name|default:user.username }}!</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Task Summary Widget -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="dashboard-widget">
+            <h3><i class="fas fa-tasks me-2 text-primary"></i>Tasks</h3>
+            <div class="d-flex justify-content-between mb-2">
+                <span>Total Tasks:</span>
+                <span class="fw-bold">{{ task_count }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span>Completed:</span>
+                <span class="fw-bold text-success">{{ completed_task_count }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-3">
+                <span>Pending:</span>
+                <span class="fw-bold text-warning">{{ pending_task_count }}</span>
+            </div>
+            <div class="d-grid">
+                <button class="btn btn-sm btn-outline-primary" disabled>Task Management Coming Soon</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Event Summary Widget -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="dashboard-widget">
+            <h3><i class="fas fa-calendar-alt me-2 text-primary"></i>Events</h3>
+            <div class="d-flex justify-content-between mb-2">
+                <span>Total Events:</span>
+                <span class="fw-bold">{{ event_count }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-3">
+                <span>Upcoming Events:</span>
+                <span class="fw-bold text-info">{{ upcoming_event_count }}</span>
+            </div>
+            <div class="d-grid">
+                <button class="btn btn-sm btn-outline-primary" disabled>Event Management Coming Soon</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Task Completion Chart -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="dashboard-widget">
+            <h3><i class="fas fa-chart-pie me-2 text-primary"></i>Task Completion</h3>
+            <div class="text-center mb-3">
+                <div class="progress" style="height: 100px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ completion_percentage }}%; height: 100px;">
+                        {{ completion_percentage }}%
+                    </div>
+                </div>
+            </div>
+            <div class="text-center text-muted small">
+                Task completion rate: {{ completion_percentage }}%
+            </div>
+        </div>
+    </div>
+    
+    <!-- Weekly Progress -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="dashboard-widget">
+            <h3><i class="fas fa-chart-line me-2 text-primary"></i>Weekly Progress</h3>
+            <div class="text-center mb-3">
+                <h2 class="text-primary">{{ tasks_completed_this_week }}</h2>
+            </div>
+            <div class="text-center text-muted small">
+                Tasks completed this week
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Upcoming Tasks -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-list me-2 text-primary"></i>Upcoming Tasks</h5>
+                    <span class="badge bg-secondary">Coming Soon</span>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if upcoming_tasks %}
+                    <div class="list-group list-group-flush">
+                        {% for task in upcoming_tasks %}
+                            <div class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ task.description }}</h6>
+                                        <p class="mb-1 text-muted small">
+                                            {% if task.event %}
+                                                <i class="fas fa-calendar-day me-1"></i>{{ task.event.title }}
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-info">{{ task.scheduled_time|date:"M d, H:i" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-muted mb-3"></i>
+                        <p>No upcoming tasks. You're all caught up!</p>
+                        <p class="text-muted small">Task creation will be available in the next step.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upcoming Events -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-calendar me-2 text-primary"></i>Upcoming Events</h5>
+                    <span class="badge bg-secondary">Coming Soon</span>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if upcoming_events %}
+                    <div class="list-group list-group-flush">
+                        {% for event in upcoming_events %}
+                            <div class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ event.title }}</h6>
+                                        <p class="mb-1 text-muted small">
+                                            {% if event.description %}
+                                                {{ event.description|truncatewords:10 }}
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-info">{{ event.start_time|date:"M d, H:i" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
+                        <p>No upcoming events.</p>
+                        <p class="text-muted small">Event creation will be available in the next step.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h4 class="alert-heading">Step 11 Complete!</h4>
+            <p>The Django Templates Structure has been successfully implemented with:</p>
+            <ul class="mb-0">
+                <li>✅ Base template with navigation, header, and footer</li>
+                <li>✅ Bootstrap CSS and JavaScript integration</li>
+                <li>✅ Custom CSS and JavaScript files</li>
+                <li>✅ Authentication templates (login, register, password reset)</li>
+                <li>✅ Dashboard template with template inheritance</li>
+                <li>✅ Static files configuration</li>
+            </ul>
+            <hr>
+            <p class="mb-0">Next step: Implement Task and Event management UI (Steps 12-13)</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

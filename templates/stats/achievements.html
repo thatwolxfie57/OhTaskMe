@@ -1,0 +1,251 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Achievements Gallery - OhTaskMe{% endblock %}
+{% block statistics_active %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+    .achievement-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        cursor: pointer;
+        border: none;
+        background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+    }
+    
+    .achievement-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    }
+    
+    .achievement-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        display: block;
+    }
+    
+    .achievement-rare {
+        border: 2px solid #ffd700;
+        background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .achievement-rare::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent);
+        animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { left: -100%; }
+        100% { left: 100%; }
+    }
+    
+    .achievement-stats {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .rarity-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+    
+    .rarity-common { background: #6c757d; color: white; }
+    .rarity-rare { background: #0d6efd; color: white; }
+    .rarity-epic { background: #6f42c1; color: white; }
+    .rarity-legendary { background: #fd7e14; color: white; }
+    
+    .achievement-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5">
+                <i class="fas fa-trophy text-warning"></i> Achievements Gallery
+            </h1>
+            <p class="lead text-muted">Your collection of earned badges and milestones</p>
+        </div>
+    </div>
+
+    <!-- Achievement Statistics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="achievement-stats">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <i class="fas fa-medal fa-3x mb-2"></i>
+                        <h3>{{ total_achievements }}</h3>
+                        <p class="mb-0">Total Achievements</p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-gem fa-3x mb-2"></i>
+                        <h3>{{ rare_achievements }}</h3>
+                        <p class="mb-0">Rare Achievements</p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-calendar-week fa-3x mb-2"></i>
+                        <h3>{{ recent_achievements }}</h3>
+                        <p class="mb-0">This Week</p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-crown fa-3x mb-2"></i>
+                        <h3>Level {{ user_stats.current_level }}</h3>
+                        <p class="mb-0">Current Level</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Achievements by Category -->
+    {% for category, achievements in grouped_achievements.items %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3">
+                <i class="fas fa-folder-open text-primary"></i> {{ category }}
+                <span class="badge bg-secondary">{{ achievements|length }}</span>
+            </h3>
+            
+            <div class="row">
+                {% for achievement in achievements %}
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="card achievement-card h-100 {% if achievement.is_rare %}achievement-rare{% endif %}"
+                         data-bs-toggle="modal" data-bs-target="#achievementModal{{ achievement.id }}">
+                        
+                        <!-- Rarity Badge -->
+                        <span class="rarity-badge rarity-{{ achievement.rarity_level }}">
+                            {{ achievement.get_rarity_level_display }}
+                        </span>
+                        
+                        <div class="card-body text-center">
+                            <i class="{{ achievement.icon }} achievement-icon text-{{ achievement.color }}"></i>
+                            <h6 class="card-title">{{ achievement.title }}</h6>
+                            <p class="achievement-description">{{ achievement.description }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar"></i> {{ achievement.unlocked_at|date:"M d, Y" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Achievement Detail Modal -->
+                <div class="modal fade" id="achievementModal{{ achievement.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-{{ achievement.color }} text-white">
+                                <h5 class="modal-title">
+                                    <i class="{{ achievement.icon }} me-2"></i>{{ achievement.title }}
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <div class="mb-3">
+                                    <span class="rarity-badge rarity-{{ achievement.rarity_level }}">
+                                        {{ achievement.get_rarity_level_display }}
+                                    </span>
+                                </div>
+                                <i class="{{ achievement.icon }} text-{{ achievement.color }}" style="font-size: 4rem;"></i>
+                                <h4 class="mt-3">{{ achievement.title }}</h4>
+                                <p class="text-muted">{{ achievement.description }}</p>
+                                <div class="border-top pt-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock"></i> Unlocked {{ achievement.unlocked_at|timesince }} ago
+                                        <br>
+                                        <i class="fas fa-calendar"></i> {{ achievement.unlocked_at|date:"F d, Y \a\t g:i A" }}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-trophy fa-5x text-muted opacity-50 mb-4"></i>
+                <h3 class="text-muted">No Achievements Yet</h3>
+                <p class="text-muted">Complete tasks and reach milestones to earn your first achievements!</p>
+                <a href="{% url 'task_list' %}" class="btn btn-primary">
+                    <i class="fas fa-tasks"></i> Start Completing Tasks
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Quick Actions -->
+    <div class="row mt-5">
+        <div class="col-12 text-center">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5>Want to earn more achievements?</h5>
+                    <p class="text-muted">Complete tasks, maintain streaks, and reach your goals!</p>
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'task_list' %}" class="btn btn-primary">
+                            <i class="fas fa-tasks"></i> View Tasks
+                        </a>
+                        <a href="{% url 'stats:goals_management' %}" class="btn btn-success">
+                            <i class="fas fa-bullseye"></i> Set Goals
+                        </a>
+                        <a href="{% url 'stats:dashboard' %}" class="btn btn-info">
+                            <i class="fas fa-chart-line"></i> View Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add sparkle effect to rare achievements
+document.querySelectorAll('.achievement-rare').forEach(card => {
+    card.addEventListener('mouseenter', function() {
+        // Add extra sparkle animation
+        this.style.transform = 'translateY(-8px) scale(1.02)';
+    });
+    
+    card.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0) scale(1)';
+    });
+});
+
+// Achievement unlock sound effect (optional)
+function playAchievementSound() {
+    // Could add a subtle achievement sound here
+    console.log('Achievement unlocked!');
+}
+</script>
+{% endblock %}

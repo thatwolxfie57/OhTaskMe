@@ -1,0 +1,425 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Create Event - OhTaskMe{% endblock %}
+{% block events_active %}active{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'event_list' %}">Events</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Create New Event</li>
+            </ol>
+        </nav>
+        <h1 class="h3">Create New Event</h1>
+        <p class="text-muted">Schedule and organize your events</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-calendar-plus me-2 text-primary"></i>Event Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="event-form" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Title Field -->
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="title" name="title" required 
+                               placeholder="Enter event title"
+                               data-validate="required,minLength:3,maxLength:100"
+                               data-min-length="3"
+                               data-max-length="100">
+                        <div class="invalid-feedback"></div>
+                        <div class="form-text">Give your event a clear, descriptive title.</div>
+                    </div>
+                    
+                    <!-- Description Field -->
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="4"
+                                  placeholder="Enter event description (optional)"
+                                  data-validate="maxLength:500"
+                                  data-max-length="500"></textarea>
+                        <div class="invalid-feedback"></div>
+                        <div class="form-text">Provide additional details about your event.</div>
+                    </div>
+                    
+                    <!-- Location Field -->
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" name="location"
+                               placeholder="Enter event location (optional)"
+                               data-validate="maxLength:200"
+                               data-max-length="200">
+                        <div class="invalid-feedback"></div>
+                        <div class="form-text">Where will this event take place?</div>
+                    </div>
+                    
+                    <!-- Date and Time Fields -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="start_time" class="form-label">Start Date & Time <span class="text-danger">*</span></label>
+                                <input type="datetime-local" class="form-control datetime-picker" id="start_time" name="start_time" required
+                                       data-validate="required,futureDate"
+                                       data-conflict-check="true"
+                                       data-picker-type="event-start">
+                                <div class="invalid-feedback"></div>
+                                <div class="form-text">When does your event start?</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="end_time" class="form-label">End Date & Time <span class="text-danger">*</span></label>
+                                <input type="datetime-local" class="form-control datetime-picker" id="end_time" name="end_time" required
+                                       data-validate="required,afterStart"
+                                       data-start-field="start_time"
+                                       data-picker-type="event-end">
+                                <div class="invalid-feedback"></div>
+                                <div class="form-text">When does your event end?</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Conflict Detection -->
+                    <div id="datetime-conflicts" class="alert alert-warning d-none mb-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span class="conflict-message"></span>
+                    </div>
+                    
+                    <!-- Task Generation Option -->
+                    <div class="mb-4">
+                        <div class="card border-info">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-magic me-2 text-info"></i>Automatic Task Generation
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <!-- Task Generation Options -->
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input event-type-toggle" type="radio" name="task_generation_type" id="no_tasks" value="none" checked 
+                                               data-target="task-preview-none">
+                                        <label class="form-check-label" for="no_tasks">
+                                            <strong>No automatic tasks</strong>
+                                        </label>
+                                        <div class="form-text">Create the event without any tasks.</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input event-type-toggle" type="radio" name="task_generation_type" id="standard_tasks" value="standard"
+                                               data-target="task-preview-standard">
+                                        <label class="form-check-label" for="standard_tasks">
+                                            <strong>Generate standard preparation tasks</strong>
+                                        </label>
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Creates three basic tasks: preparation (3 days before), final check (1 day before), 
+                                            and follow-up (1 day after) your event.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input event-type-toggle" type="radio" name="task_generation_type" id="ai_tasks" value="ai"
+                                               data-target="task-preview-ai">
+                                        <label class="form-check-label" for="ai_tasks">
+                                            <strong>Generate AI-powered task suggestions</strong>
+                                            <span class="badge bg-primary ms-2">AI</span>
+                                        </label>
+                                        <div class="form-text">
+                                            <i class="fas fa-robot me-1"></i>
+                                            Create intelligent task suggestions based on your event type, description, and context.
+                                            You'll be able to review and select which tasks to create.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Task Preview Areas -->
+                                <div id="task-preview-none" class="task-preview d-none mt-3">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        No tasks will be created automatically. You can add tasks manually after creating the event.
+                                    </div>
+                                </div>
+                                
+                                <div id="task-preview-standard" class="task-preview d-none mt-3">
+                                    <div class="alert alert-success">
+                                        <h6><i class="fas fa-tasks me-2"></i>Standard Tasks Preview</h6>
+                                        <ul class="mb-0">
+                                            <li><strong>Event Preparation</strong> - 3 days before event</li>
+                                            <li><strong>Final Check</strong> - 1 day before event</li>
+                                            <li><strong>Follow-up</strong> - 1 day after event</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div id="task-preview-ai" class="task-preview d-none mt-3">
+                                    <div class="alert alert-primary">
+                                        <h6><i class="fas fa-robot me-2"></i>AI Task Generation</h6>
+                                        <p class="mb-2">Intelligent tasks will be suggested based on your event details. You'll see a preview before confirming.</p>
+                                        <div class="task-suggestions d-none">
+                                            <strong>Suggested tasks will appear here...</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Event Preview -->
+                    <div id="event-preview" class="mb-3 d-none">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="fas fa-eye"></i> Event Preview</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="preview-content"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'event_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <span class="btn-text">
+                                <i class="fas fa-save me-1"></i>Create Event
+                            </span>
+                            <span class="btn-loading d-none">
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                Creating...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar with Tips -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-lightbulb me-2 text-warning"></i>Tips for Creating Events</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6><i class="fas fa-calendar-check me-1 text-success"></i>Scheduling</h6>
+                    <p class="small text-muted">
+                        Make sure to set realistic start and end times. Consider travel time if the event is in a different location.
+                    </p>
+                </div>
+                <div class="mb-3">
+                    <h6><i class="fas fa-tasks me-1 text-info"></i>Preparation Tasks</h6>
+                    <p class="small text-muted">
+                        Enable automatic task generation to create preparation reminders. You can always add more custom tasks later.
+                    </p>
+                </div>
+                <div class="mb-3">
+                    <h6><i class="fas fa-map-marker-alt me-1 text-danger"></i>Location</h6>
+                    <p class="small text-muted">
+                        Include specific address or meeting details in the location field to avoid confusion.
+                    </p>
+                </div>
+                <div>
+                    <h6><i class="fas fa-edit me-1 text-primary"></i>Editing</h6>
+                    <p class="small text-muted">
+                        You can always edit event details later, but generated tasks won't be automatically updated.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-chart-bar me-2 text-success"></i>Your Event Stats</h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h4 class="text-primary mb-0" id="total-events">--</h4>
+                            <small class="text-muted">Total Events</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success mb-0" id="upcoming-events">--</h4>
+                        <small class="text-muted">Upcoming</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize JavaScript modules
+    if (typeof FormValidator !== 'undefined') {
+        FormValidator.init();
+    }
+    
+    if (typeof AJAXManager !== 'undefined') {
+        AJAXManager.init();
+    }
+    
+    if (typeof DateTimePicker !== 'undefined') {
+        DateTimePicker.init();
+    }
+    
+    if (typeof DynamicUI !== 'undefined') {
+        DynamicUI.init();
+    }
+
+    // Set minimum datetime to current time
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    
+    const currentDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+    
+    const startTimeInput = document.getElementById('start_time');
+    const endTimeInput = document.getElementById('end_time');
+    
+    startTimeInput.min = currentDateTime;
+    
+    // When start time changes, update end time minimum
+    startTimeInput.addEventListener('change', function() {
+        endTimeInput.min = this.value;
+        
+        // If end time is before start time, update it
+        if (endTimeInput.value && endTimeInput.value <= this.value) {
+            const startDate = new Date(this.value);
+            startDate.setHours(startDate.getHours() + 1);
+            endTimeInput.value = startDate.toISOString().slice(0, 16);
+        }
+        
+        // Trigger preview update
+        updateEventPreview();
+    });
+    
+    endTimeInput.addEventListener('change', updateEventPreview);
+    document.getElementById('title').addEventListener('input', updateEventPreview);
+    document.getElementById('description').addEventListener('input', updateEventPreview);
+    document.getElementById('location').addEventListener('input', updateEventPreview);
+    
+    // Enhanced form submission
+    const eventForm = document.getElementById('event-form');
+    if (eventForm && typeof AJAXManager !== 'undefined') {
+        eventForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validate form first
+            if (typeof FormValidator !== 'undefined' && !FormValidator.validateForm(eventForm)) {
+                return;
+            }
+            
+            // Additional validation for event timing
+            const startTime = new Date(startTimeInput.value);
+            const endTime = new Date(endTimeInput.value);
+            
+            if (endTime <= startTime) {
+                FormValidator.showError(endTimeInput, 'End time must be after start time.');
+                return;
+            }
+            
+            // Submit via AJAX
+            AJAXManager.submitForm(eventForm, {
+                onSuccess: function(response) {
+                    if (response.redirect_url) {
+                        window.location.href = response.redirect_url;
+                    } else {
+                        window.location.href = "{% url 'event_list' %}";
+                    }
+                },
+                onError: function(error) {
+                    console.error('Event creation failed:', error);
+                }
+            });
+        });
+    }
+    
+    // Load event stats
+    loadEventStats();
+});
+
+function updateEventPreview() {
+    const title = document.getElementById('title').value;
+    const startTime = document.getElementById('start_time').value;
+    const endTime = document.getElementById('end_time').value;
+    const location = document.getElementById('location').value;
+    const description = document.getElementById('description').value;
+    
+    if (title && startTime && endTime) {
+        const previewDiv = document.getElementById('event-preview');
+        const previewContent = previewDiv.querySelector('.preview-content');
+        
+        const startDate = new Date(startTime);
+        const endDate = new Date(endTime);
+        const duration = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24 * 100)) / 10;
+        
+        let descriptionText = '';
+        if (description) {
+            const truncatedDesc = description.length > 100 ? description.substring(0, 100) + '...' : description;
+            descriptionText = `<p class="mb-0"><i class="fas fa-info me-2"></i>${truncatedDesc}</p>`;
+        }
+        
+        previewContent.innerHTML = `
+            <h6><i class="fas fa-calendar me-2"></i>${title}</h6>
+            <p class="mb-2">
+                <i class="fas fa-clock me-2"></i>
+                <strong>Start:</strong> ${startDate.toLocaleString()}<br>
+                <strong>End:</strong> ${endDate.toLocaleString()}<br>
+                <small class="text-muted">Duration: ${duration > 1 ? Math.round(duration) + ' days' : Math.round((endDate - startDate) / (1000 * 60 * 60)) + ' hours'}</small>
+            </p>
+            ${location ? `<p class="mb-2"><i class="fas fa-map-marker-alt me-2"></i><strong>Location:</strong> ${location}</p>` : ''}
+            ${descriptionText}
+        `;
+        
+        previewDiv.classList.remove('d-none');
+    } else {
+        document.getElementById('event-preview').classList.add('d-none');
+    }
+}
+
+function loadEventStats() {
+    // Enhanced stats loading with AJAX
+    if (typeof AJAXManager !== 'undefined') {
+        fetch('/api/event-stats/')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total-events').textContent = data.total || '0';
+                document.getElementById('upcoming-events').textContent = data.upcoming || '0';
+            })
+            .catch(() => {
+                // Fallback to placeholder
+                document.getElementById('total-events').textContent = '...';
+                document.getElementById('upcoming-events').textContent = '...';
+            });
+    } else {
+        // Fallback to placeholder
+        document.getElementById('total-events').textContent = '...';
+        document.getElementById('upcoming-events').textContent = '...';
+    }
+}
+</script>
+{% endblock %}

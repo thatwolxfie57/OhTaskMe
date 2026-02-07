@@ -1,0 +1,246 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Dashboard - OhTaskMe{% endblock %}
+{% block dashboard_active %}active{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h3">Dashboard</h1>
+        <p class="lead">Welcome back, {{ user.first_name|default:user.username }}!</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Task Summary Widget -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="dashboard-widget">
+            <h3><i class="fas fa-tasks me-2 text-primary"></i>Tasks</h3>
+            <div class="d-flex justify-content-between mb-2">
+                <span>Total Tasks:</span>
+                <span class="fw-bold">{{ task_count }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span>Completed:</span>
+                <span class="fw-bold text-success">{{ completed_task_count }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-3">
+                <span>Pending:</span>
+                <span class="fw-bold text-warning">{{ pending_task_count }}</span>
+            </div>
+            <div class="d-grid">
+                <a href="{% url 'task_list' %}" class="btn btn-sm btn-outline-primary">View All Tasks</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Event Summary Widget -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="dashboard-widget">
+            <h3><i class="fas fa-calendar-alt me-2 text-primary"></i>Events</h3>
+            <div class="d-flex justify-content-between mb-2">
+                <span>Total Events:</span>
+                <span class="fw-bold">{{ event_count }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span>Upcoming Events:</span>
+                <span class="fw-bold text-info">{{ upcoming_event_count }}</span>
+            </div>
+            <div class="d-grid">
+                <a href="{% url 'event_list' %}" class="btn btn-sm btn-outline-primary">View All Events</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Task Completion Chart -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="dashboard-widget">
+            <h3><i class="fas fa-chart-pie me-2 text-primary"></i>Task Completion</h3>
+            <div class="text-center mb-3">
+                <canvas id="taskCompletionChart" width="100" height="100"></canvas>
+            </div>
+            <div class="text-center text-muted small">
+                Task completion rate: {{ completion_percentage }}%
+            </div>
+        </div>
+    </div>
+    
+    <!-- Weekly Progress Chart -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="dashboard-widget">
+            <h3><i class="fas fa-chart-line me-2 text-primary"></i>Weekly Progress</h3>
+            <div class="text-center mb-3">
+                <canvas id="weeklyProgressChart" width="100" height="100"></canvas>
+            </div>
+            <div class="text-center text-muted small">
+                Tasks completed this week: {{ tasks_completed_this_week }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Upcoming Tasks -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-list me-2 text-primary"></i>Upcoming Tasks</h5>
+                    <a href="{% url 'task_create' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-plus me-1"></i>Add New
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if upcoming_tasks %}
+                    <div class="list-group list-group-flush">
+                        {% for task in upcoming_tasks %}
+                            <div class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ task.description }}</h6>
+                                        <p class="mb-1 text-muted small">
+                                            {% if task.event %}
+                                                <i class="fas fa-calendar-day me-1"></i>{{ task.event.title }}
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-info">{{ task.scheduled_time|date:"M d, H:i" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-muted mb-3"></i>
+                        <p>No upcoming tasks. You're all caught up!</p>
+                        <a href="{% url 'task_create' %}" class="btn btn-primary">Create a Task</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upcoming Events -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-calendar me-2 text-primary"></i>Upcoming Events</h5>
+                    <button class="btn btn-sm btn-outline-secondary" disabled>
+                        <i class="fas fa-plus me-1"></i>Coming Soon
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if upcoming_events %}
+                    <div class="list-group list-group-flush">
+                        {% for event in upcoming_events %}
+                            <div class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ event.title }}</h6>
+                                        <p class="mb-1 text-muted small">
+                                            {% if event.description %}
+                                                {{ event.description|truncatewords:10 }}
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-info">{{ event.start_time|date:"M d, H:i" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
+                        <p>No upcoming events.</p>
+                        <button class="btn btn-secondary" disabled>Events Coming Soon</button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Task Completion Chart
+    const taskCompletionCtx = document.getElementById('taskCompletionChart').getContext('2d');
+    const taskCompletionChart = new Chart(taskCompletionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Completed', 'Pending'],
+            datasets: [{
+                data: [{{ completed_task_count }}, {{ pending_task_count }}],
+                backgroundColor: ['#2ecc71', '#f39c12'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        font: {
+                            size: 10
+                        }
+                    }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+    
+    // Weekly Progress Chart
+    const weeklyProgressCtx = document.getElementById('weeklyProgressChart').getContext('2d');
+    const weeklyProgressChart = new Chart(weeklyProgressCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ weekly_labels|safe }},
+            datasets: [{
+                label: 'Completed Tasks',
+                data: {{ weekly_data|safe }},
+                backgroundColor: '#3498db',
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0,
+                        font: {
+                            size: 10
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 9
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

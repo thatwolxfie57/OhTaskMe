@@ -1,0 +1,280 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Event List - OhTaskMe{% endblock %}
+{% block events_active %}active{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h3">Events</h1>
+        <p class="text-muted">Manage your events and connected tasks</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{% url 'event_calendar' %}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-calendar-alt me-2"></i>Calendar View
+        </a>
+        <a href="{% url 'event_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Create New Event
+        </a>
+    </div>
+</div>
+
+<!-- Filter Controls -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Filter Events</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="filter-date-from" class="form-label">Date From</label>
+                <input type="date" class="form-control" id="filter-date-from" name="date_from" 
+                       value="{{ request.GET.date_from|default:'' }}">
+            </div>
+            <div class="col-md-4">
+                <label for="filter-date-to" class="form-label">Date To</label>
+                <input type="date" class="form-control" id="filter-date-to" name="date_to"
+                       value="{{ request.GET.date_to|default:'' }}">
+            </div>
+            <div class="col-md-4">
+                <label for="filter-type" class="form-label">Event Type</label>
+                <select class="form-select" id="filter-type" name="type">
+                    <option value="">All Types</option>
+                    <option value="regular" {% if request.GET.type == 'regular' %}selected{% endif %}>Regular</option>
+                    <option value="active" {% if request.GET.type == 'active' %}selected{% endif %}>Active</option>
+                </select>
+            </div>
+            <div class="col-md-8">
+                <label for="filter-search" class="form-label">Search</label>
+                <input type="text" class="form-control" id="filter-search" name="search"
+                       placeholder="Search events..." value="{{ request.GET.search|default:'' }}">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <div class="d-grid w-100">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Event List -->
+<div class="row">
+    {% if events %}
+        {% for event in events %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm {% if event.get_tasks.count > 0 %}active-event-card border-success{% else %}event-card border-secondary{% endif %}">
+                    <div class="card-header {% if event.get_tasks.count > 0 %}bg-light border-success{% else %}bg-white{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 text-truncate">
+                                <a href="{% url 'event_detail' event.id %}" class="text-decoration-none text-dark">
+                                    {{ event.title }}
+                                </a>
+                            </h5>
+                            <div>
+                                {% if event.get_tasks.count > 0 %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-bolt me-1"></i>Active
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-calendar me-1"></i>Passive
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <i class="fas fa-calendar-day text-primary me-2"></i>
+                            <strong>Start:</strong>
+                            <span>{{ event.start_time|date:"F j, Y, g:i A" }}</span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <i class="fas fa-calendar-check text-primary me-2"></i>
+                            <strong>End:</strong>
+                            <span>{{ event.end_time|date:"F j, Y, g:i A" }}</span>
+                        </div>
+                        
+                        {% if event.location %}
+                            <div class="mb-3">
+                                <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                                <strong>Location:</strong>
+                                <span>{{ event.location }}</span>
+                            </div>
+                        {% endif %}
+                        
+                        {% if event.description %}
+                            <div class="mb-3">
+                                <i class="fas fa-info-circle text-primary me-2"></i>
+                                <strong>Description:</strong>
+                                <span>{{ event.description|truncatewords:15 }}</span>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <i class="fas fa-clock text-primary me-2"></i>
+                            <strong>Duration:</strong>
+                            <span>{{ event.duration }} minutes</span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <i class="fas fa-flag text-primary me-2"></i>
+                            <strong>Status:</strong>
+                            {% if event.is_upcoming %}
+                                <span class="badge bg-primary">Upcoming</span>
+                            {% elif event.is_ongoing %}
+                                <span class="badge bg-success">Ongoing</span>
+                            {% elif event.is_past %}
+                                <span class="badge bg-secondary">Past</span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if event.get_tasks.count > 0 %}
+                            <div>
+                                <i class="fas fa-tasks text-success me-2"></i>
+                                <strong>Associated Tasks:</strong>
+                                <span class="badge bg-success">{{ event.get_tasks.count }}</span>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        {% with completed_tasks=event.get_tasks|length %}
+                                            {% with total_tasks=event.get_tasks.count %}
+                                                {% if total_tasks > 0 %}
+                                                    Active event with preparation tasks
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endwith %}
+                                    </small>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div>
+                                <i class="fas fa-calendar-day text-secondary me-2"></i>
+                                <strong>Event Type:</strong>
+                                <span class="text-muted">Passive event (no tasks)</span>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        This is a simple calendar event without preparation tasks
+                                    </small>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-white">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i>View Details
+                            </a>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'event_edit' event.id %}" class="btn btn-outline-secondary" 
+                                   data-bs-toggle="tooltip" title="Edit Event">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-danger" 
+                                        data-bs-toggle="modal" data-bs-target="#deleteEventModal{{ event.id }}"
+                                        title="Delete Event">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Delete Event Modal -->
+                <div class="modal fade" id="deleteEventModal{{ event.id }}" tabindex="-1" 
+                     aria-labelledby="deleteEventModalLabel{{ event.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteEventModalLabel{{ event.id }}">Confirm Deletion</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Are you sure you want to delete the event <strong>{{ event.title }}</strong>?</p>
+                                {% if event.get_tasks.count > 0 %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        This event has {{ event.get_tasks.count }} associated task(s). 
+                                        Deleting this event will also delete all associated tasks.
+                                    </div>
+                                {% endif %}
+                                <p class="mb-0">This action cannot be undone.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <form method="post" action="{% url 'event_delete' event.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-calendar-alt fa-4x text-muted mb-3"></i>
+                    <h5>No events found</h5>
+                    <p class="text-muted">
+                        {% if request.GET %}
+                            No events match your current filters.
+                            <a href="{% url 'event_list' %}">Clear all filters</a>
+                        {% else %}
+                            You don't have any events yet.
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'event_create' %}" class="btn btn-primary mt-2">
+                        <i class="fas fa-plus me-2"></i>Create Your First Event
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% if events.has_other_pages %}
+    <nav aria-label="Event pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if events.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET %}{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{% endif %}page={{ events.previous_page_number }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+                </li>
+            {% endif %}
+            
+            {% for num in events.paginator.page_range %}
+                {% if events.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > events.number|add:'-3' and num < events.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET %}{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{% endif %}page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if events.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET %}{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{% endif %}page={{ events.next_page_number }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}

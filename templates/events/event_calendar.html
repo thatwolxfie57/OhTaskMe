@@ -1,0 +1,197 @@
+{% extends 'base/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Event Calendar - OhTaskMe{% endblock %}
+{% block events_active %}active{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h3">Event Calendar</h1>
+        <p class="text-muted">View your events in calendar format for {{ month_name }} {{ year }}</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{% url 'event_list' %}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-list me-1"></i>List View
+        </a>
+        <a href="{% url 'event_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Create Event
+        </a>
+    </div>
+</div>
+
+<!-- Calendar Navigation -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <a href="?year={{ prev_year }}&month={{ prev_month }}" class="btn btn-outline-primary">
+                <i class="fas fa-chevron-left me-1"></i>Previous
+            </a>
+            <h4 class="mb-0">{{ month_name }} {{ year }}</h4>
+            <a href="?year={{ next_year }}&month={{ next_month }}" class="btn btn-outline-primary">
+                Next<i class="fas fa-chevron-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Calendar Grid -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="calendar-container">
+            <!-- Calendar Header -->
+            <div class="row g-0 border-bottom bg-light">
+                {% for weekday in weekday_names %}
+                <div class="col text-center p-2 fw-bold">
+                    {{ weekday }}
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Calendar Body -->
+            {% for day in month_days %}
+                {% if forloop.counter0|divisibleby:7 %}
+                    {% if not forloop.first %}</div>{% endif %}
+                    <div class="row g-0 border-bottom" style="min-height: 120px;">
+                {% endif %}
+                
+                <div class="col border-end p-2 calendar-day" 
+                     style="{% if day == 0 %}background-color: #f8f9fa;{% endif %}">
+                    {% if day != 0 %}
+                        <!-- Day Number -->
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <span class="badge bg-light text-dark">{{ day }}</span>
+                            {% if day in events_by_day %}
+                                <small class="text-muted">{{ events_by_day|lookup:day|length }} event{{ events_by_day|lookup:day|length|pluralize }}</small>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Events for this day -->
+                        {% if day in events_by_day %}
+                            {% for event in events_by_day|lookup:day %}
+                            <div class="event-item mb-1">
+                                <a href="{% url 'event_detail' event.id %}" 
+                                   class="text-decoration-none d-block">
+                                    <div class="card border-0 shadow-sm {% if event.get_tasks.count > 0 %}bg-success{% else %}bg-secondary{% endif %} text-white" 
+                                         style="font-size: 0.75rem;">
+                                        <div class="card-body p-1">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <div class="fw-bold" style="font-size: 0.7rem;">
+                                                        {{ event.title|truncatechars:15 }}
+                                                    </div>
+                                                    <div style="font-size: 0.6rem; opacity: 0.9;">
+                                                        {{ event.start_time|date:"g:i A" }}
+                                                        {% if event.location %}
+                                                            <br><i class="fas fa-map-marker-alt me-1"></i>{{ event.location|truncatechars:10 }}
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="ms-1">
+                                                    {% if event.get_tasks.count > 0 %}
+                                                        <i class="fas fa-bolt" style="font-size: 0.5rem;" title="Active Event"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-calendar" style="font-size: 0.5rem;" title="Passive Event"></i>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endif %}
+                </div>
+                
+                {% if forloop.last %}</div>{% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2 text-info"></i>Legend</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="badge bg-success me-2">
+                        <i class="fas fa-bolt me-1"></i>Active
+                    </div>
+                    <small class="text-muted">Events with preparation tasks</small>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="badge bg-secondary me-2">
+                        <i class="fas fa-calendar me-1"></i>Passive
+                    </div>
+                    <small class="text-muted">Simple calendar events</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>This Month</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="border-end">
+                            <h5 class="mb-0 text-primary">{{ events_by_day|length }}</h5>
+                            <small class="text-muted">Days with Events</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="border-end">
+                            <h5 class="mb-0 text-success">--</h5>
+                            <small class="text-muted">Active Events</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="mb-0 text-secondary">--</h5>
+                        <small class="text-muted">Passive Events</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.calendar-day {
+    min-height: 120px;
+    position: relative;
+}
+
+.calendar-day:hover {
+    background-color: rgba(0, 123, 255, 0.05) !important;
+}
+
+.event-item .card:hover {
+    transform: scale(1.02);
+    z-index: 10;
+}
+
+.calendar-container {
+    overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+    .calendar-day {
+        min-height: 80px;
+        font-size: 0.8rem;
+    }
+    
+    .event-item .card {
+        font-size: 0.6rem !important;
+    }
+}
+</style>
+{% endblock %}

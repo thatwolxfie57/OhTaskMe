@@ -1,0 +1,481 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Statistics Dashboard - OhTaskMe{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+    
+    .achievement-badge {
+        background: linear-gradient(45deg, #FFD700, #FFA500);
+        color: #333;
+        border-radius: 50px;
+        padding: 0.5rem 1rem;
+        margin: 0.25rem;
+        display: inline-block;
+        font-size: 0.8rem;
+        font-weight: bold;
+        box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+    }
+    
+    .rare-achievement {
+        background: linear-gradient(45deg, #9932CC, #FF1493);
+        color: white;
+    }
+    
+    .streak-item {
+        background: #f8f9fa;
+        border-left: 4px solid #28a745;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0 8px 8px 0;
+    }
+    
+    .goal-progress {
+        background: #e9ecef;
+        border-radius: 10px;
+        height: 20px;
+        overflow: hidden;
+        margin-top: 0.5rem;
+    }
+    
+    .goal-progress-bar {
+        background: linear-gradient(90deg, #28a745, #20c997);
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    }
+    
+    .insight-card {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 0 8px 8px 0;
+    }
+    
+    .xp-log-item {
+        background: #d1ecf1;
+        border-left: 4px solid #17a2b8;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0 8px 8px 0;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">📊 Statistics Dashboard</h1>
+        </div>
+    </div>
+    
+    <!-- Key Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-number">{{ user_stats.total_xp }}</div>
+                <div class="stat-label">Total XP</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-number">{{ user_stats.current_level }}</div>
+                <div class="stat-label">Current Level</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-number">{{ user_stats.tasks_completed }}</div>
+                <div class="stat-label">Tasks Completed</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-number">{{ user_stats.completion_rate|floatformat:1 }}%</div>
+                <div class="stat-label">Completion Rate</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row">
+        <!-- Productivity Trends Chart -->
+        <div class="col-lg-8">
+            <div class="chart-container">
+                <h3 class="mb-3">📈 Productivity Trends (Last 30 Days)</h3>
+                <canvas id="productivityChart" height="100"></canvas>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        Track your daily productivity score and task completion over time
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- XP Progress Chart -->
+        <div class="col-lg-4">
+            <div class="chart-container">
+                <h3 class="mb-3">⭐ XP Progress</h3>
+                <canvas id="xpChart" height="200"></canvas>
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Weekly XP: <strong>{{ weekly_tasks }} tasks</strong></span>
+                        <span>Monthly XP: <strong>{{ monthly_tasks }} tasks</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Achievements -->
+    {% if recent_achievements %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="chart-container">
+                <h3 class="mb-3">🏆 Recent Achievements</h3>
+                <div class="d-flex flex-wrap">
+                    {% for achievement in recent_achievements %}
+                    <span class="achievement-badge {% if achievement.is_rare %}rare-achievement{% endif %}">
+                        {{ achievement.badge_type|title }}: {{ achievement.title }}
+                        {% if achievement.is_rare %}⭐{% endif %}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Active Streaks and Goals -->
+    <div class="row">
+        <!-- Active Streaks -->
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h3 class="mb-3">🔥 Active Streaks</h3>
+                {% if active_streaks %}
+                    {% for streak in active_streaks %}
+                    <div class="streak-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ streak.get_streak_type_display }}</strong>
+                                <br>
+                                <small class="text-muted">Best: {{ streak.best_count }} days</small>
+                            </div>
+                            <div class="text-right">
+                                <span class="badge badge-success">{{ streak.current_count }} days</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No active streaks yet. Complete some tasks to start building streaks!</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Active Goals -->
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h3 class="mb-3">🎯 Active Goals</h3>
+                {% if active_goals %}
+                    {% for goal in active_goals %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>{{ goal.title }}</strong>
+                            <span class="badge badge-info">{{ goal.progress_percentage }}%</span>
+                        </div>
+                        <div class="goal-progress">
+                            <div class="goal-progress-bar" style="width: {{ goal.progress_percentage }}%"></div>
+                        </div>
+                        <small class="text-muted">
+                            {{ goal.current_progress }}/{{ goal.target_value }} {{ goal.progress_unit }}
+                            | Due: {{ goal.target_date }}
+                        </small>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No active goals. <a href="{% url 'stats:goals_management' %}">Set some goals</a> to track your progress!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Productivity Insights -->
+    {% if unread_insights %}
+    <div class="row">
+        <div class="col-12">
+            <div class="chart-container">
+                <h3 class="mb-3">💡 Productivity Insights</h3>
+                {% for insight in unread_insights %}
+                <div class="insight-card">
+                    <h5>{{ insight.title }}</h5>
+                    <p>{{ insight.description }}</p>
+                    {% if insight.recommendation %}
+                    <small><strong>Recommendation:</strong> {{ insight.recommendation }}</small>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Recent XP Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="chart-container">
+                <h3 class="mb-3">📝 Recent XP Activity</h3>
+                {% if recent_xp_logs %}
+                    <div class="row">
+                        {% for log in recent_xp_logs|slice:":10" %}
+                        <div class="col-md-6">
+                            <div class="xp-log-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>+{{ log.points_earned }} XP</strong>
+                                        <br>
+                                        <small>{{ log.source }}</small>
+                                    </div>
+                                    <small class="text-muted">{{ log.timestamp|timesince }} ago</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No XP activity yet. Complete some tasks to start earning XP!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ chart_data|json_script:"chart-data" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Chart.js loaded:", typeof Chart !== 'undefined');
+    
+    // Parse chart data from Django context
+    const chartData = JSON.parse(document.getElementById('chart-data').textContent);
+    console.log("Chart data:", chartData);
+    console.log("Chart data type:", typeof chartData);
+    console.log("daily_productivity:", chartData.daily_productivity);
+    console.log("daily_productivity length:", chartData.daily_productivity ? chartData.daily_productivity.length : 'undefined');
+    
+    // Check if chart containers exist
+    const productivityContainer = document.getElementById('productivityChart');
+    const xpContainer = document.getElementById('xpChart');
+    
+    if (!productivityContainer || !xpContainer) {
+        console.error("Chart containers not found!");
+        console.log("productivityContainer:", productivityContainer);
+        console.log("xpContainer:", xpContainer);
+        return;
+    }
+    
+    // Productivity Trends Chart
+    const productivityCtx = productivityContainer.getContext('2d');
+    
+    try {
+        // Check if we have valid data
+        if (!chartData.daily_productivity || !Array.isArray(chartData.daily_productivity)) {
+            console.error("Invalid daily_productivity data:", chartData.daily_productivity);
+            return;
+        }
+        
+        console.log("Creating productivity chart with", chartData.daily_productivity.length, "data points");
+        
+        const productivityChart = new Chart(productivityCtx, {
+        type: 'line',
+        data: {
+            labels: chartData.daily_productivity.map(d => {
+                const date = new Date(d.date);
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }),
+            datasets: [{
+                label: 'Productivity Score',
+                data: chartData.daily_productivity.map(d => d.score),
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.4,
+                fill: true
+            }, {
+                label: 'Tasks Completed',
+                data: chartData.daily_productivity.map(d => d.tasks),
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                tension: 0.4,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: false
+                },
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Productivity Score'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Tasks Completed'
+                    },
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+            }
+        }
+    });
+    console.log("Productivity chart created successfully");
+    
+    } catch (error) {
+        console.error("Error creating productivity chart:", error);
+        console.error("Chart data:", chartData);
+    }
+    
+    // XP Progress Chart (Doughnut)
+    const xpCtx = document.getElementById('xpChart').getContext('2d');
+    
+    try {
+        // Get XP data from chart data
+        const currentXP = chartData.user_stats ? chartData.user_stats.total_xp || 0 : 0;
+        const currentLevel = chartData.user_stats ? chartData.user_stats.current_level || 1 : 1;
+        const nextLevelXP = (currentLevel + 1) * 100; // Simple level calculation
+        const xpForNextLevel = nextLevelXP - currentXP;
+        
+        console.log("Creating XP chart - Current XP:", currentXP, "Level:", currentLevel);
+        
+        const xpChart = new Chart(xpCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Current XP', 'XP to Next Level'],
+            datasets: [{
+                data: [currentXP % 100, xpForNextLevel > 0 ? xpForNextLevel : 0],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(201, 203, 207, 0.3)'
+                ],
+                borderColor: [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(201, 203, 207, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                title: {
+                    display: true,
+                    text: `Level ${currentLevel} Progress`
+                }
+            },
+            cutout: '70%'
+        }
+    });
+    
+    // Add center text to doughnut chart
+    Chart.register({
+        id: 'centerText',
+        beforeDraw: function(chart) {
+            if (chart.config.type === 'doughnut') {
+                const ctx = chart.ctx;
+                const centerConfig = chart.config.options.plugins.centerText;
+                if (centerConfig) {
+                    const text = centerConfig.text;
+                    const color = centerConfig.color || '#000';
+                    const fontSize = centerConfig.fontSize || 20;
+                    
+                    ctx.save();
+                    ctx.font = `${fontSize}px Arial`;
+                    ctx.fillStyle = color;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    const centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
+                    const centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
+                    
+                    ctx.fillText(text, centerX, centerY);
+                    ctx.restore();
+                }
+            }
+        }
+    });
+    
+    // Update XP chart with center text
+    xpChart.config.options.plugins.centerText = {
+        text: `${currentXP} XP`,
+        color: '#333',
+        fontSize: 16
+    };
+    xpChart.update();
+    console.log("XP chart created successfully");
+    
+    } catch (error) {
+        console.error("Error creating XP chart:", error);
+        console.error("Chart data user_stats:", chartData.user_stats);
+    }
+});
+</script>
+{% endblock %}

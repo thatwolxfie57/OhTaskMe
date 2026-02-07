@@ -1,0 +1,227 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Edit Event - {{ event.title }} - OhTaskMe{% endblock %}
+{% block events_active %}active{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'event_list' %}">Events</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'event_detail' event.id %}">{{ event.title }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Edit</li>
+            </ol>
+        </nav>
+        <h1 class="h3">Edit Event</h1>
+        <p class="text-muted">Update your event details</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-edit me-2 text-primary"></i>Event Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="event-form">
+                    {% csrf_token %}
+                    
+                    <!-- Title Field -->
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="title" name="title" required 
+                               value="{{ event.title }}" placeholder="Enter event title">
+                        <div class="form-text">Give your event a clear, descriptive title.</div>
+                    </div>
+                    
+                    <!-- Description Field -->
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="4"
+                                  placeholder="Enter event description (optional)">{{ event.description }}</textarea>
+                        <div class="form-text">Provide additional details about your event.</div>
+                    </div>
+                    
+                    <!-- Location Field -->
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" name="location"
+                               value="{{ event.location }}" placeholder="Enter event location (optional)">
+                        <div class="form-text">Where will this event take place?</div>
+                    </div>
+                    
+                    <!-- Date and Time Fields -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="start_time" class="form-label">Start Date & Time <span class="text-danger">*</span></label>
+                                <input type="datetime-local" class="form-control" id="start_time" name="start_time" 
+                                       value="{{ event.start_time|date:'Y-m-d\TH:i' }}" required>
+                                <div class="form-text">When does your event start?</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="end_time" class="form-label">End Date & Time <span class="text-danger">*</span></label>
+                                <input type="datetime-local" class="form-control" id="end_time" name="end_time" 
+                                       value="{{ event.end_time|date:'Y-m-d\TH:i' }}" required>
+                                <div class="form-text">When does your event end?</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Warning about existing tasks -->
+                    {% if event.get_tasks.count > 0 %}
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Note:</strong> This event has {{ event.get_tasks.count }} associated task{{ event.get_tasks.count|pluralize }}.
+                        Changing the event time will not automatically update existing task schedules.
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'event_detail' event.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Update Event
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar with Event Info -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2 text-info"></i>Current Event Info</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Created:</strong>
+                    <div class="text-muted small">{{ event.created_at|date:"F j, Y, g:i A" }}</div>
+                </div>
+                <div class="mb-3">
+                    <strong>Last Updated:</strong>
+                    <div class="text-muted small">{{ event.updated_at|date:"F j, Y, g:i A" }}</div>
+                </div>
+                <div class="mb-3">
+                    <strong>Duration:</strong>
+                    <div class="text-muted small">{{ event.duration }} minutes</div>
+                </div>
+                <div class="mb-3">
+                    <strong>Status:</strong>
+                    <div class="text-muted small">
+                        {% if event.is_upcoming %}
+                            <span class="badge bg-primary">Upcoming</span>
+                        {% elif event.is_ongoing %}
+                            <span class="badge bg-success">Ongoing</span>
+                        {% elif event.is_past %}
+                            <span class="badge bg-secondary">Past</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if event.get_tasks.count > 0 %}
+                <div class="mb-3">
+                    <strong>Associated Tasks:</strong>
+                    <div class="text-muted small">{{ event.get_tasks.count }} task{{ event.get_tasks.count|pluralize }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-bolt me-2 text-warning"></i>Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'event_detail' event.id %}" class="btn btn-outline-info">
+                        <i class="fas fa-eye me-1"></i>View Event
+                    </a>
+                    <a href="{% url 'task_create' %}?event={{ event.id }}" class="btn btn-outline-success">
+                        <i class="fas fa-plus me-1"></i>Add Task
+                    </a>
+                    <a href="{% url 'event_delete' event.id %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash me-1"></i>Delete Event
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Associated Tasks Preview -->
+        {% if event.get_tasks.count > 0 %}
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-tasks me-2 text-success"></i>Associated Tasks</h6>
+            </div>
+            <div class="card-body">
+                {% for task in event.get_tasks|slice:":3" %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="flex-grow-1">
+                            <div class="small">{{ task.description|truncatechars:30 }}</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">
+                                {{ task.scheduled_time|date:"M j, g:i A" }}
+                            </div>
+                        </div>
+                        <div>
+                            {% if task.completed %}
+                                <i class="fas fa-check-circle text-success"></i>
+                            {% else %}
+                                <i class="fas fa-clock text-warning"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+                {% if event.get_tasks.count > 3 %}
+                    <div class="text-center mt-2">
+                        <small class="text-muted">
+                            and {{ event.get_tasks.count|add:"-3" }} more task{{ event.get_tasks.count|add:"-3"|pluralize }}
+                        </small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startTimeInput = document.getElementById('start_time');
+    const endTimeInput = document.getElementById('end_time');
+    
+    // When start time changes, update end time minimum
+    startTimeInput.addEventListener('change', function() {
+        endTimeInput.min = this.value;
+        
+        // If end time is before start time, update it
+        if (endTimeInput.value && endTimeInput.value <= this.value) {
+            const startDate = new Date(this.value);
+            startDate.setHours(startDate.getHours() + 1);
+            endTimeInput.value = startDate.toISOString().slice(0, 16);
+        }
+    });
+    
+    // Form validation
+    document.getElementById('event-form').addEventListener('submit', function(e) {
+        const startTime = new Date(startTimeInput.value);
+        const endTime = new Date(endTimeInput.value);
+        
+        if (endTime <= startTime) {
+            e.preventDefault();
+            alert('End time must be after start time.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

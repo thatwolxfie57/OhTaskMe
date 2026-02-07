@@ -1,0 +1,224 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Create Task - OhTaskMe{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'task_list' %}">Tasks</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Create New Task</li>
+            </ol>
+        </nav>
+        <h2><i class="fas fa-plus text-primary"></i> Create New Task</h2>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Task Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="taskForm" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Task Description <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="description" name="description" 
+                                   placeholder="Enter task description..." 
+                                   value="{{ request.POST.description|default:'' }}" 
+                                   required
+                                   data-validate="required,minLength:3,maxLength:200"
+                                   data-min-length="3"
+                                   data-max-length="200">
+                            <div class="invalid-feedback"></div>
+                            <div class="form-text">Provide a clear description of what needs to be done.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="scheduled_time" class="form-label">Scheduled Date & Time <span class="text-danger">*</span></label>
+                            <input type="datetime-local" class="form-control datetime-picker" id="scheduled_time" name="scheduled_time" 
+                                   value="{{ request.POST.scheduled_time|default:'' }}" 
+                                   required
+                                   data-validate="required,futureDate"
+                                   data-conflict-check="true">
+                            <div class="invalid-feedback"></div>
+                            <div class="form-text">When should this task be completed?</div>
+                            <div id="datetime-conflicts" class="alert alert-warning d-none mt-2">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span class="conflict-message"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="event" class="form-label">Associated Event</label>
+                            <select class="form-select dynamic-select" id="event" name="event" data-target="event-details">
+                                <option value="">No associated event</option>
+                                {% for event in events %}
+                                    <option value="{{ event.id }}" 
+                                            data-start="{{ event.start_time|date:'c' }}"
+                                            data-end="{{ event.end_time|date:'c' }}"
+                                            data-location="{{ event.location|default:'' }}"
+                                            {% if request.POST.event == event.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ event.title }} - {{ event.start_time|date:"M d, Y" }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Optionally link this task to an existing event.</div>
+                            <div id="event-details" class="mt-2 d-none">
+                                <div class="card card-body bg-light">
+                                    <h6 class="mb-2">Event Details</h6>
+                                    <div class="event-info"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Task Preview -->
+                        <div id="task-preview" class="mb-3 d-none">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="fas fa-eye"></i> Task Preview</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="preview-content"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'task_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <span class="btn-text">
+                                    <i class="fas fa-save"></i> Create Task
+                                </span>
+                                <span class="btn-loading d-none">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    Creating...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Panel -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle text-info"></i> Tips
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>Creating Effective Tasks</h6>
+                    <ul class="mb-3">
+                        <li>Be specific and clear in your description</li>
+                        <li>Set realistic deadlines</li>
+                        <li>Link tasks to events when relevant</li>
+                        <li>Break down large tasks into smaller ones</li>
+                    </ul>
+                    
+                    <h6>Examples</h6>
+                    <div class="small text-muted">
+                        <strong>Good:</strong> "Review project proposal for client meeting"<br>
+                        <strong>Better:</strong> "Prepare presentation slides for quarterly review meeting"
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-keyboard text-warning"></i> Keyboard Shortcuts
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <strong>Ctrl + S:</strong> Save task<br>
+                        <strong>Esc:</strong> Cancel and go back<br>
+                        <strong>Tab:</strong> Navigate between fields
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize JavaScript modules
+    if (typeof FormValidator !== 'undefined') {
+        FormValidator.init();
+    }
+    
+    if (typeof AJAXManager !== 'undefined') {
+        AJAXManager.init();
+    }
+    
+    if (typeof DateTimePicker !== 'undefined') {
+        DateTimePicker.init();
+    }
+    
+    if (typeof DynamicUI !== 'undefined') {
+        DynamicUI.init();
+    }
+
+    // Set default datetime to current time + 1 hour
+    const scheduledTimeInput = document.getElementById('scheduled_time');
+    if (!scheduledTimeInput.value) {
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+        const formatted = now.toISOString().slice(0, 16);
+        scheduledTimeInput.value = formatted;
+    }
+
+    // Enhanced form submission with AJAX
+    const taskForm = document.getElementById('taskForm');
+    if (taskForm && typeof AJAXManager !== 'undefined') {
+        taskForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validate form first
+            if (typeof FormValidator !== 'undefined' && !FormValidator.validateForm(taskForm)) {
+                return;
+            }
+            
+            // Submit via AJAX
+            AJAXManager.submitForm(taskForm, {
+                onSuccess: function(response) {
+                    if (response.redirect_url) {
+                        window.location.href = response.redirect_url;
+                    } else {
+                        window.location.href = "{% url 'task_list' %}";
+                    }
+                },
+                onError: function(error) {
+                    console.error('Task creation failed:', error);
+                }
+            });
+        });
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            taskForm.dispatchEvent(new Event('submit'));
+        }
+        if (e.key === 'Escape') {
+            window.location.href = "{% url 'task_list' %}";
+        }
+    });
+
+    // Auto-focus on description field
+    document.getElementById('description').focus();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends 'base/base.html' %}
+
+{% block title %}About OhTaskMe{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 mb-3">About OhTaskMe</h1>
+            <p class="lead">A comprehensive task and event management application</p>
+        </div>
+    </div>
+    
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <h2>Our Mission</h2>
+            <p>OhTaskMe was created with a simple mission: to help people organize their lives, reduce stress, and never miss important deadlines or events. We believe that with the right tools, anyone can become more productive and achieve their goals with less effort.</p>
+            <p>Our application combines task management with event planning, creating a unified system that helps you prepare for important events and manage your day-to-day responsibilities.</p>
+        </div>
+        <div class="col-md-6">
+            <h2>Key Features</h2>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><i class="fas fa-check-circle text-success me-2"></i> Comprehensive task management</li>
+                <li class="list-group-item"><i class="fas fa-check-circle text-success me-2"></i> Event planning with automatic task generation</li>
+                <li class="list-group-item"><i class="fas fa-check-circle text-success me-2"></i> AI-powered task suggestions</li>
+                <li class="list-group-item"><i class="fas fa-check-circle text-success me-2"></i> Customizable dashboard and statistics</li>
+                <li class="list-group-item"><i class="fas fa-check-circle text-success me-2"></i> Responsive design for desktop and mobile</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">How It Works</h2>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="display-1 mb-3 text-primary">1</div>
+                            <h3>Create Events</h3>
+                            <p>Add your upcoming events with details like date, time, and preparation requirements.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="display-1 mb-3 text-primary">2</div>
+                            <h3>Get Task Suggestions</h3>
+                            <p>Our AI will suggest relevant preparation tasks based on your event details.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="display-1 mb-3 text-primary">3</div>
+                            <h3>Stay Organized</h3>
+                            <p>Track your progress on the dashboard and get reminders for upcoming tasks and events.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12 text-center">
+            <h2 class="mb-4">Ready to get started?</h2>
+            <a href="{% url 'register' %}" class="btn btn-primary btn-lg me-2">Sign Up Now</a>
+            <a href="{% url 'login' %}" class="btn btn-outline-secondary btn-lg">Login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

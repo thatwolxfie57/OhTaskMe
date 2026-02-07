@@ -1,0 +1,165 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Virtual Environment (project-specific)
+devvenv/
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+local_settings.py
+
+# Django Static Files
+staticfiles/
+static_root/
+/static/collected/
+
+# Django Media Files
+media/
+/media/
+
+# ML Models & Training Artifacts
+ml_models/
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+training_data/
+events/training_data/
+
+# Environment Variables & Secrets
+.env
+*.env
+.env.*
+settings_local.py
+*_local.py
+
+# NLP Data & Models (if downloaded to project)
+nltk_data/
+en_core_web_sm/
+spacy_models/
+
+# Markdown Progress Reports
+docs/
+Markdown docs/
+*.md
+# Keep essential markdown files (uncomment as needed)
+!README.md
+# !CONTRIBUTING.md
+# !LICENSE.md
+
+# IDE & Editor Files
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*.swn
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Coverage Reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+nosetests.xml
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Unit Test / Debug Artifacts
+create_sample_insights.py
+
+run_all_tests.bat
+run_all_tests.ps1
+run_all_tests.py
+simple_test.py
+test_api.py
+test_chart_data.py
+
+
+*.test.log
+test_results/
+.tox/
+
+# Temporary Files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.swp
+*.cache
+.cache/
+
+# Compiled Translation Files
+*.mo
+*.pot
+
+# Documentation Builds
+docs/_build/
+docs/.doctrees/
+site/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Profiling data
+*.prof
+
+# Database dumps
+*.sql
+*.dump
+
+# Backup files
+*~
+
+# Local configuration overrides
+config_local.yaml
+config_local.json

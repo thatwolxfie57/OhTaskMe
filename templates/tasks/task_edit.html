@@ -1,0 +1,194 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Edit Task - OhTaskMe{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'task_list' %}">Tasks</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'task_detail' task.id %}">{{ task.description|truncatechars:30 }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Edit</li>
+            </ol>
+        </nav>
+        <h2><i class="fas fa-edit text-primary"></i> Edit Task</h2>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Task Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Task Description <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="description" name="description" 
+                                   placeholder="Enter task description..." 
+                                   value="{{ request.POST.description|default:task.description }}" required>
+                            <div class="form-text">Provide a clear description of what needs to be done.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="scheduled_time" class="form-label">Scheduled Date & Time <span class="text-danger">*</span></label>
+                            <input type="datetime-local" class="form-control" id="scheduled_time" name="scheduled_time" 
+                                   value="{{ request.POST.scheduled_time|default:scheduled_time_formatted }}" required>
+                            <div class="form-text">When should this task be completed?</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="event" class="form-label">Associated Event</label>
+                            <select class="form-select" id="event" name="event">
+                                <option value="">No associated event</option>
+                                {% for event in events %}
+                                    <option value="{{ event.id }}" 
+                                            {% if request.POST.event == event.id|stringformat:"s" or task.event.id == event.id %}selected{% endif %}>
+                                        {{ event.title }} - {{ event.start_time|date:"M d, Y" }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Optionally link this task to an existing event.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="completed" name="completed" 
+                                       {% if request.POST.completed or task.completed %}checked{% endif %}>
+                                <label class="form-check-label" for="completed">
+                                    Mark as completed
+                                </label>
+                            </div>
+                            <div class="form-text">Check this box if the task has been completed.</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <a href="{% url 'task_detail' task.id %}" class="btn btn-outline-secondary me-2">
+                                    <i class="fas fa-arrow-left"></i> Cancel
+                                </a>
+                                <a href="{% url 'task_list' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-list"></i> Back to Tasks
+                                </a>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Task
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Info Panel -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle text-info"></i> Task Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>Current Status</h6>
+                    <p>
+                        {% if task.completed %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle"></i> Completed
+                            </span>
+                            {% if task.completed_at %}
+                                <br><small class="text-muted">Completed {{ task.completed_at|timesince }} ago</small>
+                            {% endif %}
+                        {% else %}
+                            {% now "c" as now %}
+                            {% if task.scheduled_time|date:"c" < now %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-exclamation-triangle"></i> Overdue
+                                </span>
+                                <br><small class="text-muted">Was due {{ task.scheduled_time|timesince }} ago</small>
+                            {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-clock"></i> Pending
+                                </span>
+                                <br><small class="text-muted">Due {{ task.scheduled_time|timeuntil }}</small>
+                            {% endif %}
+                        {% endif %}
+                    </p>
+
+                    <h6>Creation Details</h6>
+                    <p class="small text-muted">
+                        Created: {{ task.created_at|date:"M d, Y g:i A" }}<br>
+                        Last updated: {{ task.updated_at|date:"M d, Y g:i A" }}
+                    </p>
+
+                    {% if task.event %}
+                        <h6>Associated Event</h6>
+                        <p>
+                            <span class="text-decoration-none">
+                                <i class="fas fa-calendar text-info"></i> {{ task.event.title }}
+                            </span>
+                            <br><small class="text-muted">{{ task.event.start_time|date:"M d, Y g:i A" }}</small>
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-keyboard text-warning"></i> Keyboard Shortcuts
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <strong>Ctrl + S:</strong> Save changes<br>
+                        <strong>Esc:</strong> Cancel and go back<br>
+                        <strong>Tab:</strong> Navigate between fields
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trash text-danger"></i> Danger Zone
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">
+                        Delete this task permanently. This action cannot be undone.
+                    </p>
+                    <a href="{% url 'task_delete' task.id %}" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-trash"></i> Delete Task
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            document.querySelector('form').submit();
+        }
+        if (e.key === 'Escape') {
+            window.location.href = "{% url 'task_detail' task.id %}";
+        }
+    });
+
+    // Auto-focus on description field
+    document.getElementById('description').focus();
+    
+    // Auto-select all text in description field for easy editing
+    document.getElementById('description').select();
+});
+</script>
+{% endblock %}
